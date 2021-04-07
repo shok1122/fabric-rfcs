@@ -175,12 +175,14 @@ FPC Client SDK APIは[ドキュメント](https://github.com/hyperledger-labs/fa
 ## FPC Chaincode Deployment
 
 ### Peer Setup 
+
+FPCチェーンコードを導入するには，二つの準備が必要です．
 There are two preparation steps required before one can deploy FPC Chaincode:
 
-- The chaincode administrator has to register with the [*Intel Attestation Service (IAS)*](https://software.intel.com/content/www/us/en/develop/topics/software-guard-extensions/attestation-services.html) to obtain attestation credentials and configure the local platform correspondingly.
-- The peer operator has to add FPC in the `externalBuilders` section in `core.yaml` and restart the peer.
+- チェーンコードの管理者は，[*Intel Attestation Service (IAS)*](https://software.intel.com/content/www/us/en/develop/topics/software-guard-extensions/attestation-services.html)に登録し，attestation credentialsの取得とローカルプラットフォームの設定が必要です．
+- ピアのオペレータは，FPCを`core.yaml`の`externalBuilders`セクションに追加し，ピアを再起動します．
   <!-- See an example `core.yaml` [here](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/integration/config/core.yaml#L569). -->
-  FPC provides external builder and launcher scripts to run a FPC Chaincode on a peer or as an external service.
+  FPCは，FPCチェーンコードをピア上または外部サービスとして実行するための外部ビルダーとランチャースクリプトを提供します．
   ```yaml
   chaincode:
     externalBuilders:
@@ -192,28 +194,26 @@ There are two preparation steps required before one can deploy FPC Chaincode:
 
 
 ### Deployment
-The chaincode deployment follows mostly the standard Fabric procedure:
 
-- The deployer compiles an agreed-upon FPC Chaincode using the FPC build environment.
-  This step creates a package with the main FPC deployment artifact, the `enclave.signed.so` enclave binary, and deployment metadata.
-  FPC provides convenience scripts to facilitate this step.
-- Subsequently, the deployer follows the standard Fabric 2.0 Lifecycle steps, i.e., `install`, `approveformyorg` and `commit`. 
-  A noteworthy FPC specific aspect is that the version used *must* be the code identity (i.e., `MRENCLAVE`) of the FPC Chaincode.
+チェーンコードの展開は，ほぼ標準的なFabricの手順に沿って行われます．
+- デプロイ担当者は，FPCビルド環境を用いて，合意されたFPCチェーンコードをコンパイルします．
+  このステップでは，メインのFPC展開アーティファクト，`enclave.signed.so`，展開用メタデータを含むパッケージを作成します．
+  FPCはこのステップを容易にするための便利なスクリプトを提供します．
+- その後，デプロイ担当者は標準的なFabric 2.0 Lifecycleのステップ，すなわち，`install`，`approveformyorg`，`commit`を行います．
+ FPC特有の注意点としては，使用するバージョンはFPCのChaincodeのコードID（すなわち，`MRENCLAVE`）でなければならないということです．  
   ```bash
   peer lifecycle chaincode approveformyorg --name ${CC_ID} --version ${MRENCLAVE} ...
   peer lifecycle chaincode commit --name ${CC_ID} --version ${MRENCLAVE} ...
   ```
-- Lastly, once the chaincode definition for an FPC Chaincode has been approved by the consortium, 
-  a Chaincode Enclave must be created via an `initEnclave` FPC-lifecycle command.
-  FPC implements such command as a regular chaincode method invoked through the `peer chaincode` (query) command.
-  Hence, supporting it does not require any modification to the Fabric framework.
-  (See the [Enclave Initialization and Registration](#enclave-initialization-and-registration) section for more details.)
+- 最後に，FPC用チェーンコードの定義がコンソーシアムで承認されたら，チェーンコード・エンクレーブは，`initEnclave`コマンドで作成される必要がある．
+  FPCはこのコマンドを`peer chaincode`コマンドを通して実行される通常のチェーンコードメソッドとして実装している．
+  よって，このコマンドをサポートするために，Fabricのフレームワークを変更する必要はありません．（詳細は，[Enclave Initialization and Registration](#enclave-initialization-and-registration)を参照）
 
   <!-- commented out as not really user visible
     This command triggers the creation of an enclave and registers it at the FPC Registry.  
     The registration includes the attestation of the Chaincode Enclave.
   -->
-  For more information on additional management commands, see the [FPC Management API document](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/docs/design/fabric-v2%2B/fpc-management.md).
+  追加の管理コマンドの情報は，[FPC Management API document](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/docs/design/fabric-v2%2B/fpc-management.md)を参照してください．
 
 <!-- commented out as not really user visible
 The FPC Registry stores all attestation reports, as signed by the TEE vendor. 
@@ -224,8 +224,7 @@ In order to support the endorsement model of Fabric, chaincode enclaves executin
 That is, there is also a public/private key pair and a symmetric state encryption key per FPC Chaincode that are shared among all chaincode enclaves that run the same FPC Chaincode using the key distribution protocol.
 -->
 
-A detailed description (internal view) of the FPC deployment process is provided in the FPC 1.0 Architecture section below and can be found in the [Full Detail Diagrams](#full-detail-diagrams) section.
-
+FPCの展開プロセスの詳細な説明は，以下のFPC1.0アーキテクチャセクションで提供されており，[Full Detail Diagrams](#full-detail-diagrams)セクションで確認できます．
 
 # Threat & Trust Model
 <!-- note: put threat-model here as threat-model is crucial to understand when looking at architecture and the application classes covered, all of this only covered here.  
