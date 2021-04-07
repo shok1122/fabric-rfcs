@@ -149,16 +149,17 @@ FPCのチェーンコードがプログラムされなければならないプ�
 
 ### Application
 
-FPC extends the Fabric Client SDKs with extra functionality that allows users to write end-to-end secure FPC-based applications.
-In particular, the FPC Client SDK provides these core functions.
-First, FPC transaction proposal creation, including transparent encryption of arguments.
-Second, FPC transaction proposal response validation and decryption of the result.
-The encryption and decryption is performed by the Client SDK "under the covers" without requiring any special action by the users, i.e., users still use normal `invoke`/`query` functions to issue FPC transaction invocations.
-Last, the Client SDK takes care of enclave discovery, that is, the Client SDK is responsible to fetch the corresponding chaincode encryption key and to determine the endorsing peers that host the FPC Chaincode enclave.
-Extended support for other Fabric Client SDK, such as the  NodeSDK, will be future work.
+FPCは，Fabric Client SDKに，エンドツーエンドでセキュアなFPCベースのアプリケーションを書くための機能を追加したものです．
+特に，FPC Client SDKは以下のコア機能をを提供しています．
+一つ目は，引数の透過的な暗号化を含むFPCトランザクション提案の作成．
+二つ目は，FPCトランザクション提案の応答の検証と結果の復号化．
+暗号化と復号化は，ユーザの特別の操作は不要で，Client SDKによって裏で行われます．
+つまり，ユーザは通常の`invoke`/`query`を使って，FPCトランザクションを発行します．
+最後に，Client SDKは対応するチェーンコードの暗号化キーを取得し，FPCチェーンコードのエンクレーブをホストする承認ピアを決定する役割を担います．
+NodeSDKのような他のFabric Client SDKへの拡張サポートは，今後の課題です．
 
-An application can interact with the asset store chaincode from our [Hello World Tutorial](https://github.com/hyperledger-labs/fabric-private-chaincode/tree/master/examples) using the FPC Client SDK based on the gateway API of the Fabric Client Go SDK.
-Here an example ***app.go***:
+アプリケーションは，Fabric Client Go SDKのゲートウェイAPIをベースにしたFPC Client SDKを使って，[Hello World Tutorial](https://github.com/hyperledger-labs/fabric-private-chaincode/tree/master/examples)で紹介したアセットストアのチェーンコードと対話することができます．
+以下は，***app.go***の例です．
 ```go
 // Get FPC Contract
 contract := fpc.GetContract(network, "helloWorld")
@@ -169,7 +170,7 @@ if err != nil {
 }
 ```
 
-The FPC Client SDK API is documented [here](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/client_sdk/go/fpc/contract.go) in detail.
+FPC Client SDK APIは[ドキュメント](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/client_sdk/go/fpc/contract.go)に詳細が記載されています．
 
 ## FPC Chaincode Deployment
 
