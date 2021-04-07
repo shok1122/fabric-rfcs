@@ -62,14 +62,12 @@ TEEベースのエンドースメントとリモート認証により，新し�
 
 ## Sound and low impact foundation
 
-The architecture presented below is driven by two goals: 
+以下に紹介するアーキテクチャは，二つの目標に基づいています．
 
-(1) minimize the requirements on Fabric core, specifically no code changes,
+(1) Fabricコアへの要件を最小限にし，コードの変更を行わないこと
+(2) この最初のアーキテクチャ以上に，より多くのユースケースをカバーし，よりリッチなプログラミングモデルを提供し，パフォーマンスを向上させるための明確なロードマップを提供する
 
-(2) enable a clear roadmap beyond this first architecture to cover larger classes of use-cases, to provide a richer programming model and to gain additional performance benefits (besides computation also reduce communication costs over standard fabric) while providing a largely unchanged [User Experience](#user-experience).
-
-
-Overall, FPC adds another line of defense around a chaincode, in addition to channels and private data.
+全体的に見て，FPCはチャネルとプライベートデータに加えて，チェーンコードの周りにもう一つの防御ラインを追加します．
 
 # User Experience
 [functional-view]: #functional-view
@@ -81,39 +79,48 @@ Overall, FPC adds another line of defense around a chaincode, in addition to cha
 
 ## Overview
 
-Fabric Private Chaincode is best thought of as a way of running smart contract chaincode inside a Trusted Execution Environment (TEE), also called an _enclave_, for strong assurance of privacy and a more computation-efficient model of integrity.
-Programs executed in the TEE are held in encrypted memory even while running, and this memory can't be read in the clear even by a root user or privileged system process. Chaincode state is encrypted with keys only known to the chaincode. Each chaincode runs in its own TEE to provide the best possible isolation among chaincodes on an endorsing peer. Because the execution is opaque, a modified set of integrity controls is also implemented in order to be certain that what's running is exactly what is intended, without tampering.
+FPCは，スマートコントラクトであるチェーンコードをTEE内で実行する方法と考えるのがベストです．
+TEEはエクレーブとも呼ばれ，プライバシーを強く保証し，より計算効率の高い完全性モデルを実現します．
+TEE内で実行されたプログラムは，実行中も暗号化されたメモリに保持され，ルートユーザや特権的なシステムプロセスであっても，このメモリを平文で読み取ることはできません．
+チェーンコードの状態は，そのチェーンコードが知っている鍵で暗号化されています．
+各チェーンコードは独自のTEEで実行され，承認ピア上のチェーンコード間で可能な限り隔離を実現します．
+実行が不透明であるため，実行されているものが正確に意図されたものであり，改ざんされていないことを確認するために，修正された整合性制御のセットも実装されています．
 <!-- commented out as not provided by FPC 1.0 and anyway not crucial for this section:
 With FPC’s hardware-rooted cryptographic integrity mechanisms, it requires less redundancy of computation than in the standard model of Fabric to get a high level of trust.
 -->
-With FPC, a chaincode can process sensitive data, such as cryptographic material, health-care data, financial data, and personal data; without revealing it to the endorsing peer on which it runs.
 
-Overall, FPC can be considered an addition to Fabric wherein all chaincode computation relies only on the correctness of data provided by an authenticated Client or computed inside of and signed by a validated enclave.
-The Endorsing Peer outside of the enclave is considered untrusted.
-For this reason, all transaction data and chaincode state are encrypted by default in a way that only the FPC Chaincode can access them in clear.
+FPCでは，チェーンコードは機密データを承認ピアに開示することなく処理できます．例えば，cryptographic material, health-care data, financial data, and personal dataなどです．
 
-Writing chaincode for FPC should come natural to developers familiar with Fabric as the programming model (e.g., chaincode lifecycle, chaincode invocations and state) is the same as for normal Fabric chaincode.
-The main differences are a (for now at least) different programming language (C++) and a Shim API which implements a subset of the current Fabric API.
-The Shim is responsible to provide access to the ledger state as maintained by the `untrusted` peer. In particular, the FPC Shim, under the cover and transparent to the developer, encrypts all state data that is written to the ledger and decrypts them when retrieved later. Similarly, it also encrypts and authenticates all interaction with the applications, see below. Lastly, it attests to the result and the state update based on the enclave's hardware identity to provide a hardware-trust rooted endorsement.
+FPCはFabricに追加されたもので，すべてのチェーンコードの計算は認証されたクライアントから提供されたデータの正しさ，または検証されたエンクレイブ内で計算され，署名されたデータの正しさのみに依存しています．
+エンクレーブの外にある承認ピアは信頼されないとみなされています．
+このため，全てのトランザクションデータとチェーンコードの状態は，FPCチェーンコードのみが平文でアクセスできるように，デフォルトで暗号化されています．
 
-Applications can interact with a FPC Chaincode using an extension of the Fabric Client Go SDK.
-This FPC extension exposes the Fabric `gateway` interface and transparently encrypts and authenticates all interactions with a FPC Chaincode.
+FPC用のチェーンコードを書くことは，Fabricになれた開発者にとって自然なことでしょう．
+プログラミングモデル（例えば，チェーンコードのライフサイクル，チェーンコードの呼び出しと状態など）は，通常のFabricのチェーンコードと同じです．
+主な違いは，プログラミング言語が異なること（C++）と，現在のFabric APIのサブセットを実装したShim APIです．
+Shimは「信頼されていない」ピアが維持している台帳の状態へのアクセスを提供する責任があります．
+特に，FPC Shimは，開発者に見えないように，台帳に書き込まれたすべての状態を暗号化し，取り出すときには復号化します．
+同様に，FPC Shimは，アプリケーションとのすべてのやり取りを暗号化し，認証します．
+最後に，エンクレイブのハードウェア・アイデンティティに基づいて，結果と状態の更新を認証し，ハードウェア・トラストに根ざした裏付けを提供します．
 
-Note that FPC hides all interactions with the TEE technology from the developers, i.e., they they do not have to understand the peculiarities of TEEs.  This largely also applies to the administrators deploying FPC Chaincode, although they will have to understand the general concepts of TEE to make informed decisions on security policies and to configure the attestation credentials.
+アプリケーションは，Fabric Client Go SDKの拡張機能を使って，FPCチェーンコードとやり取りすることができます．
+このFPCの拡張は，Fabricの「ゲートウェイ」インタフェースを公開し，FPCチェーンコードとの全てのやり取りを透過的に暗号化，認証します．
 
-To illustrate the interaction between an application and a FPC Chaincode see the following figure. In particular, this figure highlights the encrypted elements of the FPC architecture.
+FPCは，TEEとの全てのやり取りを開発者から隠してしまう，開発者はTEEの特殊性を理解する必要が無いことに注意してください．
+このことは，FPCチェーンコードを導入する管理者にも当てはまりますが，管理者は，セキュリティポリシーについて十分な情報を得たうえで決定を下し，認証資格を設定するために，TEEの一般的な概念を理解する必要があります．
+
+アプリケーションとFPCチェーンコード間の相互作用を説明するために，次の図を参照してください．
+特に，この図では，FPCアーキテクチャの暗号化された要素が強調されています．
 
 ![Encryption](../images/fpc/high-level/Slide1.png)
 
-Encrypted elements of the FPC architecture (over and above those in Fabric, such as TLS tunnels from Client to Peer) include:
+FPCアーキテクチャ（クライアントからピアへのTLSトンネルのようなFabricのもの以外に）の暗号化された要素は以下を含みます．
+- トランザクション引数
+- クライアントに返されるプロポーザルの応答メッセージに含まれる実行結果
+- チェーンコード・エンクレーブ内のメモリのすべての内容
+- トランザクション・ライトセットのすべてのエントリ（デフォルト）
 
-- The arguments of a transaction proposal.
-- The results of execution in a proposal response message returned to the Client.
-- All contents of memory in the Chaincode Enclave(s).
-- All entries of the transaction writeset (by default).
-
-Note that with the exception of the results, where also a legitimate requestor knows the secret keys, all secret/private keys are known only by to the enclaves or, for memory encryption, to the HW memory encryption engine (with the hardware also enforcing that only legitimate enclaves have access to the unencrypted memory).
-
+正当な要求者も秘密鍵を知っている結果を除いて，すべての秘密鍵はエンクレーブ，またはメモリ暗号化の場合はハードウェアのメモリ暗号化エンジンのみが知っていることに注意してください．
 
 ## FPC Development
 
