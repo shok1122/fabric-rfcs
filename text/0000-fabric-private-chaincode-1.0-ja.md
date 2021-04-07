@@ -127,23 +127,25 @@ FPCアーキテクチャ（クライアントからピアへのTLSトンネル�
 ### Chaincode
 <!-- this section should cover: platform (x86, sgx sdk, linux; but also via docker); cmake; shim.h -> hello world tutorial -->
 
-As mentioned earlier, FPC Chaincode is executed in an enclave.
-In the initial version, FPC supports Intel&reg; SGX as trusted execution technology.
-For this reason, a FPC Chaincode must currently be written in C++ using our FPC SDK, which builds on top of the Intel [SGX SDK](https://github.com/intel/linux-sgx).
-The current development platform is Linux (Ubuntu). However, we also do enable seamless development via docker. 
-Hence, development is also easily possible with MacOS or Windows as host.
+前述の通り，FPCチェーンコードはエンクレーブ内で実行されます．
+初期のバージョンでは，FPCはTEEとしてIntel SGXをサポートしています．
+このため，FPCチェーンコードは，インテルの[SGX SDK](https://github.com/intel/linux-sgx)の上に構築されたFPC SDKを使って，C++で記述する必要があります．
+現在の開発環境はLinux（Ubuntu）です．
+しかし，Dockerを使ったシームレスな開発も可能にしています．
+そのため，MacOSやWindowsをホストとした開発も容易に行うことができます．
 
-To ease the development process, FPC provides a `cmake` based build system which allows the developer to focus on the chaincode without having to understand SGX build details.
-The programming interface against which a FPC Chaincode has to be programmed is encapsulated in the C header file [`shim.h`](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/ecc_enclave/enclave/shim.h).
-To get a more in-depth understanding of the chaincode development, consult the detailed [Hello World Tutorial](https://github.com/hyperledger-labs/fabric-private-chaincode/tree/master/examples) that guides new FPC developers through the process of writing their first FPC Chaincode.
+開発プロセスを容易にするために，FPCはcmakeベースのビルドシステムを提供しており，開発者はSGXのビルドの詳細を理解することなく，チェーンコードに集中することができます．
+FPCのチェーンコードがプログラムされなければならないプログラミングインタフェースは，Cのヘッダーファイル[`shim.h`](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/ecc_enclave/enclave/shim.h)にカプセル化されています．
+チェーンコードの開発をより深く理解するためには，新しいFPC開発者が最初のFPCチェーンコードを書くプロセスをガイドする詳細な[Hello World Tutorial](https://github.com/hyperledger-labs/fabric-private-chaincode/tree/master/examples)を参照してください．
 
-The outcome of the build process are two deployment artifacts: 
-(1) the enclave binary file (`enclave.signed.so`) containing both the FPC Chaincode as well as the FPC Shim, and 
-(2) the SGX (code) identity of the chaincode, `MRENCLAVE`, which can be imagined as a form of cryptographic hash over the contents of the enclave binary and related SGX deployment metadata.
+ビルドプロセスの結果として，二つの成果物が得られます．
+(1) FPCチェーンコードとFPC Shimの両方を含むエンクレーブのバイナリファイル（`enclave.signed.so`）
+(2) チェーンコードのSGXアイデンティティである，`MRENCLAVE`．これは，エンクレーブのバイナリの内容と関連するSGX展開メタデータに対するハッシュの一形態と考えられます．
+
 <!-- mrenclave described as simple hash is a gross over simplification but should be ok here to give some intuition without getting into the details.-->
-Details of this process may vary in future versions supporting other TEE platforms.
+このプロセスの詳細は，他のTEEプラットフォームをサポートする将来のバージョンでは異なる可能性があります．
 
-Note: It is the goal for the project is to support additional chaincode languages in the future, e.g., there is an ongoing effort to add support for WebAssembly.
+注：このプロジェクトでは，将来的に追加のチェーンコード言語をサポートすることを目標にしています．例えば，WebAssemblyのサポートを追加などです．
 
 ### Application
 
