@@ -232,24 +232,27 @@ So putting it before User Experience would put it a bit in wrong context ...
 Arguably, it might even be better to put it _after_ the architecture as there are essentially already some forward references to architecture features involved.
 -->
 
-- Organizations do not have to trust each other (i.e., users, admins and software such as peers of another organization or arbitrary collusions thereof) as far as confidentiality is concerned.
-An organization can modify any software (including any hypervisor, operating system, or Fabric itself).
-Yet, such an organization would not be able to extract private state from the chaincode,
-or learn anything about the requests or responses of the victim organization (other than what the chaincode logic allows them to learn about it).
+- 組織は，機密性に関する限り，お互い（別の組織の仲間やその恣意的な結託をするようなユーザ，管理者，ソフトウェア）を信用する必要はありません．
+組織は，あらゆるソフトウェア（ハイパーバイザ，OS，Fabric自体）を変更することができます．
+しかし，そのような組織は，チェーンコードからプライベートな状態を抽出したり，被害組織のリクエストやレスポンスについて（チェーンコードのロジックが許可していること以外は）何も知ることができません．
 
-- Organizations do have to trust a quorum of other organizations as defined by the Fabric lifecycle and chaincode endorsement policies as far as integrity of chaincode metadata is concerned. E.g., they have to rely on quorums of admins to only create and modify chaincodes as appropriate; also, they have to rely on quorums of peers to properly execute transactions of the Enclave Registry and the Enclave Endorsement Validation (see more details [below](#architecture)).
+- 組織は，チェーンコードのメタデータの整合性に関しては，Fabricのライフサイクルとチェーンコードの承認ポリシーで定義された他の組織の定足数を信頼しなければならない．
+例えば，適切なチェーンコードの作成と変更のみを行う管理者の定足数を信頼しなければなりません．また，Enclave RegistryとEnclave Endorsement Validtionのトランザクションを適切に実行するピアの定足数を信頼しなければなりません．（詳細は[以下](#architecture)）
 
-- We also assume that normally users trust the peers of their own organization, e.g., when performing lifecycle operations or invoking chaincode execution. (This is primarily for simplicity and is relevant when retrieving public FPC encryption keys from the Enclave Registry. As for any Fabric chaincode, users outside of organizations could implement queries without trust in a single organization/peer by repeating queries with multiple peers/organizations until enough identical responses are received to satisfy the endorsement policy, similar to transaction validation at peers before applying them to the ledger.)
+- また，通常のユーザはライフサイクル操作やチェーンコードの実行を呼び出すときなど，自分の組織のピアを信頼することを仮定しています．
+（これは，主に単純化のためで，FPCの公開鍵をEnclave Registryから取得する際に関係する．
+Fabricチェーンコードの場合，組織外のユーザは，承認ポリシーを満たすのに十分な数の同一の応答が得られるまで，複数のピア／組織への問い合わせを繰り返すことで，単一の組織／ピアを信頼せずに問い合わせを実施できる（台帳に適用する前にピアでトランザクションを検証するのと同様）．
 
-- We do assume that a code running inside a TEE cannot be tampered with or its memory inspected.
-However, given above-mentioned trust assumptions on peers, a TEE (FPC Chaincode Enclave) cannot trust the (rest of the) hosting peer.
-Hence all data received via transaction invocations (e.g., the transaction proposal) or via state access operations (e.g., `get_state`) must be considered untrusted.
+- TEE内で実行されるコードは，改ざんされず，そのメモリが検査されることは無いことを仮定しています．
+しかし，上述のピアに対する信頼の仮定を考えると，TEEは，ホストするピアを信頼することはできません．
+したがって，トランザクションの呼び出しや状態へのアクセス（例：`get_state`）を介して受け取ったすべてのデータは，信頼されていないと考えなければなりません．
 
-- We additionally require that remote attestations provided by a TEE are authentic and prove that only the code referenced in the attestation could have issued it.
-Therefore, all participants/organizations trust a TEE (in particular, the FPC Chaincode Enclave), which can provide such an attestation, regardless of at which peer/organization the TEE is hosted.
-Such trust extends also to enclave signatures issued from attested cryptographic keys.
-It is due to such trust that FPC *implicitly* defines a policy (see also the [FPC Management API](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/docs/design/fabric-v2%2B/fpc-management.md#fpc-endorsement-policies) document) that governs the requirements for a successful [enclave endorsement validation](#enclave-endorsement-validation).
-In particular, according to such policy, a single enclave signature (enclave endorsement) is required to validate an FPC transaction.
+- さらに，TEEによって提供されるリモート認証が真正であり，認証で参照されるコードのみがそれを発行できたことを証明することを要求します．
+したがって，すべての参加者／組織は，TEEがどの参加者／組織でホストされているかに関わらず，このような証明を提供できるTEEを信頼します．
+このような信頼は，認証された暗号鍵から発行されたエンクレーブの署名にも及びます．
+このような信頼に基づき，FPCは，[enclave endorsement validation](#enclave-endorsement-validation)を成功させるための要件を規定するポリシー（[FPC Management API](https://github.com/hyperledger-labs/fabric-private-chaincode/blob/master/docs/design/fabric-v2%2B/fpc-management.md#fpc-endorsement-policies)を参照）を暗黙のうちに定義している．
+特に，当該ポリシーによれば，FPCトランザクションを検証するには，単一のエンクレーブ署名が必要となる．
+
 
 
 # FPC 1.0 Application Domain
