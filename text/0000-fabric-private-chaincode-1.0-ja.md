@@ -13,24 +13,27 @@ nav_order: 3
 # Summary
 [summary]: #summary
 
-This RFC introduces a new framework called Fabric Private Chaincode (FPC), built on Hyperledger Fabric.
-FPC enhances data confidentiality for chaincodes by executing them in a Trusted Execution Environment (TEE), such as Intel&reg; SGX.
-Most importantly, FPC protects transactional data while in use by the chaincode, in transit to/from a client, and stored on the ledger.
-Hence, differently from typical chaincode applications, curious Fabric peers can only handle encrypted data related to FPC Chaincodes.
-Ultimately, this mitigates the requirement for endorsing peers to be fully trusted for confidentiality.
+このRFCは，Hyperledger Fabric上に構築されたFabric Private Chaincode（FPC）と呼ばれる新しいフレームワークを紹介しています．
+FPCは，Intel SGXのようなTEEでチェーンコードを実行することでチェーンコードのデータの機密性を向上させます．
+最も重要なことは，FPCはチェーンコードの実行中，クライアントとの通信，台帳への保存において，トランザクションデータを保護する点です．
+したがって，通常のチェーンコード・アプリケーションと異なり，FabricピアはFPCチェーンコードに関連する暗号化されたデータしか扱うことができません．
+最終的に，承認ピアが機密性について完全に信頼されるという要件が緩和されます．
 
-The design of FPC thus extends the existing model of privacy in Fabric, enabling the secure implementation of additional use cases. An example of a new use-case enabled by the first end-to-end secure realization of that framework, called *FPC 1.0*, are privacy-preserving federated analytics over data owned by multiple mutually mistrusting organizations.
+よって，FPCの設計はFabricのプライバシーの既存のモデルを拡張子，追加のユースケースの安全な実装を可能にします．
+The design of FPC thus extends the existing model of privacy in Fabric, enabling the secure implementation of additional use cases.
+FPC1.0と呼ばれる，そのフレームワークの最初のエンドツーエンドの安全な実現によって可能になった新しいユースケースの例は，相互に信頼できない複数の組織が所有するデータに対するプライバシーを保護するフェデレーション分析です．
 
+FPCは，Hyperledger Fabric v2.2のバッチフリーランタイム拡張機能として，Github (https://github.com/hyperledger-labs/fabric-private-chaincode)で利用可能です．
 FPC is available open-source on Github (https://github.com/hyperledger-labs/fabric-private-chaincode) as patch-free runtime extension of Hyperledger Fabric v2.2.
 
 **FPC in a nutshell.**
-FPC operates by allowing a chaincode to process transaction arguments and state without exposing the contents to anybody, including the endorsing peers.
-Also, the framework provides interested parties (clients and peers) with the capability to establish trust in an FPC Chaincode.
-This is achieved by means of a hardware-based remote attestation, which parties use to verify that a genuine TEE protects the intended chaincode and its data.
-Clients can thus establish a secure channel with the FPC Chaincode (as opposed to the peer hosting the chaincode) which preserves the confidentiality of transaction arguments and responses.
-On the hosting peer, the TEE preserves the confidentiality of the data while the chaincode processes it.
-Such data includes secret cryptographic keys, which the chaincode uses to secure any data that it stores on the public ledger.
-
+FPCは，承認ピアを含む誰にもコンテンツを見せることなく，チェーンコードがトランザクションの引数やステートを処理できるようにすることで，動作します．
+また，このフレームワークは，利害関係者（クライアント，ピア）にFPCチェーンコードとの信頼を確立する機能を提供します．
+これは，ハードウェアベースのリモートアテステーションによって実現されます．
+これは，当事者が，本物のTEEが目的のチェーンコードとそのデータを保護していることを確認するために使用します．
+よって，クライアントは，トランザクションの引数と返り値の機密性を保護するFPCチェーンコードとの安全なチャネルを確立できます．
+ホスティングピアでは，TEEがチェーンコードがデータを処理している間，そのデータの機密性を保護します．
+このようなデータには，チェーンコードが台帳に保存するデータを保護するために使用する秘密の暗号鍵が含まれます．
 
 # Motivation
 [motivation]: #motivation
@@ -43,18 +46,28 @@ Such data includes secret cryptographic keys, which the chaincode uses to secure
 
 ## Enable new use-cases with strong privacy requirements
 
-FPC is primarily motivated by the many use cases in which it is desirable to embody an application in a Blockchain architecture, but where in addition to the *existing integrity assurances*, the application *also requires privacy*. This may include privacy-preserving analytics on sensitive data such as regulated medical or genomic data, supply chain operations requiring contract secrecy, private voting or sealed bid auctions. With Fabric's current privacy mechanisms, these use cases are not possible as they still require the endorsement nodes to be fully trusted.
-For example, the concept of channels and Private Data allows to restrict chaincode data sharing only within a group of authorized participants, still when the chaincode processes the data it is exposed to the endorsing peer in clear. In the example of a voting system, where a government may run an endorsing peer it is clear that this is not ideal.
+FPCは主に，ブロックチェーンアーキテクチャでアプリケーションを実現するのが望ましい多くのユースケースに動機づけられていますが，既存の完全性保証に加えて，プライバシーが必要なアプリケーションにも動機づけられています．
+これには，規制対象の医療データやゲノムデータなどの機密データに関するプライバシー保護分析，契約の機密保持を必要とするサプライチェーンの運用，個人投票，封印入札オークションなどが含まれます．
+Fabricの現在のプライバシーメカニズムでは，承認ノードが完全に信頼されている必要があるため，これらのユースケースは実現不可能です．
+例えば，チャネルとプライベートデータの概念では，チェーンコードのデータを承認された参加者のグループ内でのみ共有できますが，チェーンコードがデータを処理するときに，承認ピアに公開されてしまいます．
+政府が承認ピアを運用するような投票システムの例では，これが理想的でないことは明らかです．
 
 ## Enable performance improvements
 
-A secondary motivation for FPC is its integrity model based on hardware-enabled remote cryptographic attestation; this model can provide similarly high confidence of integrity to the standard Fabric model of integrity through redundancy, but using less computation. With TEE-based endorsement and remote attestation, a new set of endorsement policies are made possible, which can reduce the number of required, and potentially expensive, chaincode executions and still provide sufficient assurance of integrity for many workloads. As usual for performance, there are trade-offs and only measurements can identify the optimal approach.
+FPCの二番目の同期はハードウェア対応のリモート暗号化認証に基づく整合性モデルです．
+このモデルは，標準のFabricモデルの冗長性による完全性と同様の高い信頼性を，より少ない計算量で提供できます．
+TEEベースのエンドースメントとリモート認証により，新しいエンドースメントポリシーが可能になります．
+これにより，必要な，そして潜在的に高価なチェーンコードの実行回数を減らしながらも，多くのワークロードに対して十分な整合性の保証を提供することができます．
+性能に関しては通常，トレードオフの関係にあり，最適なアプローチを特定できるのは測定のみです．
 
 ## Sound and low impact foundation
 
 The architecture presented below is driven by two goals: 
+
 (1) minimize the requirements on Fabric core, specifically no code changes,
+
 (2) enable a clear roadmap beyond this first architecture to cover larger classes of use-cases, to provide a richer programming model and to gain additional performance benefits (besides computation also reduce communication costs over standard fabric) while providing a largely unchanged [User Experience](#user-experience).
+
 
 Overall, FPC adds another line of defense around a chaincode, in addition to channels and private data.
 
